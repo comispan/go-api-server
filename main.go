@@ -37,7 +37,7 @@ func main() {
 		})
 	})
 
-	router.POST("/post", func(c *gin.Context) {
+	router.POST("/carparkLots", func(c *gin.Context) {
 
 		// id := c.Query("id")
 		// page := c.DefaultQuery("page", "0")
@@ -47,17 +47,17 @@ func main() {
 		//value, dataType, offset, err := jsonparser.Get(body, "mid")
 		//fmt.Printf("mid: %s; type: %T; offset: %d; err: %s", value, dataType, offset, err)
 
-		result := getCurrentTaxiLocations()
+		result := getCarparkLots()
 		c.JSON(http.StatusOK, result)
 	})
 
 	router.Run(":8080")
 }
 
-func getCurrentTaxiLocations() Carparks {
+func getCarparkLots() Carparks {
 
-	url := viperEnvVariable("Carpark")
-	key := viperEnvVariable("AccountKey")
+	url := viperEnvVariable("lta.Carpark")
+	key := viperEnvVariable("lta.AccountKey")
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
