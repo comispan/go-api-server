@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -27,13 +26,15 @@ type Carpark struct {
 	Agency        string `json:"Agency"`
 }
 
+// Locations struct which contains an array of locations (lat and long)
 type Locations struct {
 	Locations []Location `json:"value"`
 }
 
+// Location struct which contains the lat and long
 type Location struct {
-	Longitude	float64	`json:"Longitude"`
-	Latitude 	float64 `json:"Latitude"`
+	Longitude float64 `json:"Longitude"`
+	Latitude  float64 `json:"Latitude"`
 }
 
 func main() {
@@ -47,30 +48,12 @@ func main() {
 	})
 
 	router.POST("/carparkLots", func(c *gin.Context) {
-
-		// id := c.Query("id")
-		// page := c.DefaultQuery("page", "0")
-		// name := c.PostForm("name")
-		// message := c.PostForm("message")
-		//body, _ := ioutil.ReadAll(c.Request.Body)
-		//value, dataType, offset, err := jsonparser.Get(body, "mid")
-		//fmt.Printf("mid: %s; type: %T; offset: %d; err: %s", value, dataType, offset, err)
-
 		result := getCarparkLots()
 		c.JSON(http.StatusOK, result)
 	})
 
 	router.POST("/taxiAvailability", func(c *gin.Context) {
-
-		// id := c.Query("id")
-		// page := c.DefaultQuery("page", "0")
-		// name := c.PostForm("name")
-		// message := c.PostForm("message")
-		//body, _ := ioutil.ReadAll(c.Request.Body)
-		//value, dataType, offset, err := jsonparser.Get(body, "mid")
-		//fmt.Printf("mid: %s; type: %T; offset: %d; err: %s", value, dataType, offset, err)
-
-		result := getCarparkLots()
+		result := getTaxiAvailability()
 		c.JSON(http.StatusOK, result)
 	})
 
@@ -93,36 +76,32 @@ func getCarparkLots() Carparks {
 		log.Fatal(err)
 	}
 
-	fmt.Println(len(body))
-
 	var carparks Carparks
 	json.Unmarshal(body, &carparks)
 
-	//fmt.Println(len(carparks.Carparks))
-
 	return carparks
+}
 
-	// // Decoding arbitrary data: https://blog.golang.org/json
-	// var f interface{}
-	// err = json.Unmarshal(body, &f)
+func getTaxiAvailability() Locations {
 
-	// // iterate through the map with a range statement
-	// m := f.(map[string]interface{})
-	// for k, v := range m {
-	// 	switch vv := v.(type) {
-	// 	case string:
-	// 		fmt.Println(k, "is string", vv)
-	// 	case float64:
-	// 		fmt.Println(k, "is float64", vv)
-	// 	case []interface{}:
-	// 		fmt.Println(k, "is an array:")
-	// 		for i, u := range vv {
-	// 			fmt.Println(i, u)
-	// 		}
-	// 	default:
-	// 		fmt.Println(k, "is of a type I don't know how to handle")
-	// 	}
-	// }
+	url := viperEnvVariable("lta.TaxiAvailability")
+	key := viperEnvVariable("lta.AccountKey")
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("AccountKey", key)
+
+	res, err := client.Do(req)
+	body, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var locations Locations
+	json.Unmarshal(body, &locations)
+
+	return locations
 }
 
 // return the value of the key
