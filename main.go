@@ -27,6 +27,15 @@ type Carpark struct {
 	Agency        string `json:"Agency"`
 }
 
+type Locations struct {
+	Locations []Location `json:"value"`
+}
+
+type Location struct {
+	Longitude	float64	`json:"Longitude"`
+	Latitude 	float64 `json:"Latitude"`
+}
+
 func main() {
 	router := gin.Default()
 
@@ -38,6 +47,20 @@ func main() {
 	})
 
 	router.POST("/carparkLots", func(c *gin.Context) {
+
+		// id := c.Query("id")
+		// page := c.DefaultQuery("page", "0")
+		// name := c.PostForm("name")
+		// message := c.PostForm("message")
+		//body, _ := ioutil.ReadAll(c.Request.Body)
+		//value, dataType, offset, err := jsonparser.Get(body, "mid")
+		//fmt.Printf("mid: %s; type: %T; offset: %d; err: %s", value, dataType, offset, err)
+
+		result := getCarparkLots()
+		c.JSON(http.StatusOK, result)
+	})
+
+	router.POST("/taxiAvailability", func(c *gin.Context) {
 
 		// id := c.Query("id")
 		// page := c.DefaultQuery("page", "0")

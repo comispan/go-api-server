@@ -1,5 +1,7 @@
 # Go API service
 
+[![Build Status](https://travis-ci.org/comispan/go-api-server.svg?branch=master)](https://travis-ci.org/comispan/go-api-server)
+
 This project provides transport and environment information to users via REST API calls. It uses a backend framework based on [Gin Web Framework](https://github.com/gin-gonic/gin).
 
 ## Getting Started
