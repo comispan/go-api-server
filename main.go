@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -37,6 +39,33 @@ type Location struct {
 	Latitude  float64 `json:"Latitude"`
 }
 
+// Bus services
+type Services struct {
+	Services []Service `json:"Services"`
+}
+
+// Bus service
+type Service struct {
+	ServiceNo string  `json:"ServiceNo"`
+	Operator  string  `json:"Operator"`
+	NextBus1  NextBus `json:"NextBus"`
+	NextBus2  NextBus `json:"NextBus2"`
+	NextBus3  NextBus `json:"NextBus3"`
+}
+
+// Bus details
+type NextBus struct {
+	OriginCode       string `json:"OriginCode"`
+	DestinationCode  string `json:"DestinationCode"`
+	EstimatedArrival string `json:"EstimatedArrival"`
+	Latitude         string `json:"Latitude"`
+	Longitude        string `json:"Longitude"`
+	VisitNumber      string `json:"VisitNumber"`
+	Load             string `json:"Load"`
+	Feature          string `json:"Feature"`
+	Type             string `json:"Type"`
+}
+
 func main() {
 	router := gin.Default()
 
@@ -56,6 +85,19 @@ func main() {
 		result := getTaxiAvailability()
 		c.JSON(http.StatusOK, result)
 	})
+
+	router.POST("/busArrival", func(c *gin.Context) {
+		BusStopCode := c.Query("BusStopCode")
+		ServiceNo := c.Query("ServiceNo")
+		result := getBusArrival(BusStopCode, ServiceNo)
+		c.JSON(http.StatusOK, result)
+	})
+
+	t := time.Now()
+	formattedTime := fmt.Sprintf("%d-%02d-%02dT%02d:%02d:%02d",
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second())
+	fmt.Println(formattedTime)
 
 	router.Run(":8080")
 }
@@ -102,6 +144,34 @@ func getTaxiAvailability() Locations {
 	json.Unmarshal(body, &locations)
 
 	return locations
+}
+
+func getBusArrival(BusStopCode string, ServiceNo string) Services {
+	url := viperEnvVariable("lta.BusArrival")
+	key := viperEnvVariable("lta.AccountKey")
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("AccountKey", key)
+
+	q := req.URL.Query()
+	q.Add("BusStopCode", BusStopCode)
+	if ServiceNo != "" {
+		q.Add("ServiceNo", ServiceNo)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	res, err := client.Do(req)
+	body, err := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var services Services
+	json.Unmarshal(body, &services)
+
+	return services
 }
 
 // return the value of the key
