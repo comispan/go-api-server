@@ -1,15 +1,10 @@
-package main
+package datasource
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
-
-	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 )
 
 // Carparks struct which contains an array of carparks
@@ -39,12 +34,12 @@ type Location struct {
 	Latitude  float64 `json:"Latitude"`
 }
 
-// Bus services
+// Services struct which contains an array of services
 type Services struct {
 	Services []Service `json:"Services"`
 }
 
-// Bus service
+// Service struct which contains bus service details
 type Service struct {
 	ServiceNo string  `json:"ServiceNo"`
 	Operator  string  `json:"Operator"`
@@ -53,7 +48,7 @@ type Service struct {
 	NextBus3  NextBus `json:"NextBus3"`
 }
 
-// Bus details
+// NextBus struct which contains the details of the next bus
 type NextBus struct {
 	OriginCode       string `json:"OriginCode"`
 	DestinationCode  string `json:"DestinationCode"`
@@ -66,46 +61,8 @@ type NextBus struct {
 	Type             string `json:"Type"`
 }
 
-func main() {
-	router := gin.Default()
-
-	router.GET("/ping", func(c *gin.Context) {
-
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
-
-	router.POST("/carparkLots", func(c *gin.Context) {
-		result := getCarparkLots()
-		c.JSON(http.StatusOK, result)
-	})
-
-	router.POST("/taxiAvailability", func(c *gin.Context) {
-		result := getTaxiAvailability()
-		c.JSON(http.StatusOK, result)
-	})
-
-	router.POST("/busArrival", func(c *gin.Context) {
-		BusStopCode := c.Query("BusStopCode")
-		ServiceNo := c.Query("ServiceNo")
-		result := getBusArrival(BusStopCode, ServiceNo)
-		c.JSON(http.StatusOK, result)
-	})
-
-	t := time.Now()
-	formattedTime := fmt.Sprintf("%d-%02d-%02dT%02d:%02d:%02d",
-		t.Year(), t.Month(), t.Day(),
-		t.Hour(), t.Minute(), t.Second())
-	fmt.Println(formattedTime)
-
-	router.Run(":8080")
-}
-
-func getCarparkLots() Carparks {
-
-	url := viperEnvVariable("lta.Carpark")
-	key := viperEnvVariable("lta.AccountKey")
+// GetCarparkLots returns the available lots
+func GetCarparkLots(url string, key string) (carparks Carparks) {
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
@@ -118,16 +75,13 @@ func getCarparkLots() Carparks {
 		log.Fatal(err)
 	}
 
-	var carparks Carparks
 	json.Unmarshal(body, &carparks)
 
-	return carparks
+	return
 }
 
-func getTaxiAvailability() Locations {
-
-	url := viperEnvVariable("lta.TaxiAvailability")
-	key := viperEnvVariable("lta.AccountKey")
+// GetTaxiAvailability returns the available taxis locations
+func GetTaxiAvailability(url string, key string) (locations Locations) {
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
@@ -140,15 +94,13 @@ func getTaxiAvailability() Locations {
 		log.Fatal(err)
 	}
 
-	var locations Locations
 	json.Unmarshal(body, &locations)
 
-	return locations
+	return
 }
 
-func getBusArrival(BusStopCode string, ServiceNo string) Services {
-	url := viperEnvVariable("lta.BusArrival")
-	key := viperEnvVariable("lta.AccountKey")
+// GetBusArrival returns the incoming bus information
+func GetBusArrival(BusStopCode string, ServiceNo string, url string, key string) (services Services) {
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
@@ -168,33 +120,7 @@ func getBusArrival(BusStopCode string, ServiceNo string) Services {
 		log.Fatal(err)
 	}
 
-	var services Services
 	json.Unmarshal(body, &services)
 
-	return services
-}
-
-// return the value of the key
-func viperEnvVariable(key string) string {
-
-	viper.SetConfigName("config")
-	viper.AddConfigPath(".")
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Fatalf("Error while reading config file %s", err)
-	}
-
-	// viper.Get() returns an empty interface{}
-	// to get the underlying type of the key,
-	// we have to do the type assertion, we know the underlying value is string
-	// if we type assert to other type it will throw an error
-	value, ok := viper.Get(key).(string)
-
-	// If the type is a string then ok will be true
-	// ok will make sure the program not break
-	if !ok {
-		log.Fatalf("Invalid type assertion")
-	}
-
-	return value
+	return
 }

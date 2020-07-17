@@ -4,4 +4,7 @@ go:
     - 1.14.x
 
 env:
-    - AccountKey=key Carpark=carpark
+    - lta.AccountKey=key 
+    - lta.Carpark=carpark 
+    - lta.TaxiAvailability=taxiAvailability 
+    - lta.BusArrival=busArrival
